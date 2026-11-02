@@ -1,5 +1,6 @@
 #include "lla/frontend/register.hpp"
 #include "lla/intro/register.hpp"
+#include "lla/party/register.hpp"
 #include "lla/platform/vulkan_host.hpp"
 #include "lla/saves/save_slots.hpp"
 #include "lla/settings/device_settings.hpp"
@@ -13,7 +14,9 @@ int main() {
     std::cout << "Love Letter Asylum\n"
               << "Up and Down select a row. Enter confirms. Click a row.\n"
               << "New Game asks for one of five save slots, then plays the intro.\n"
-              << "Continue resumes a saved slot in the tutorial room.\n"
+              << "After the intro, pick 2 of 5 colors and place them, then the tutorial starts.\n"
+              << "Continue resumes a saved party in the tutorial room.\n"
+              << "A save without a party opens party selection.\n"
               << "Options changes display, audio, controls, and access.\n"
               << "Audio levels are saved. No sound plays yet.\n"
               << "Arrows or A/D move. Escape pauses.\n"
@@ -27,6 +30,7 @@ int main() {
         lla::ModuleRegistry registry;
         lla::register_frontend(registry, &saves, &phase, &settings_screen, &devices);
         lla::register_intro(registry, &phase, &devices);
+        lla::register_party(registry, &saves, &phase, &settings_screen, &devices);
         lla::register_tutorial(registry, &phase, &saves, &settings_screen, &devices);
         lla::register_settings(registry, &devices, &phase, settings_screen);
         return lla::run_vulkan_host(registry, &devices);

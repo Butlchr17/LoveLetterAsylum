@@ -17,6 +17,9 @@ int fail(const char* message) {
 }  // namespace
 
 int main() {
+    if (lla::kWalkSpeed != 0.375f) {
+        return fail("dungeon walk speed is not 75 percent of 0.5");
+    }
     if (!near(lla::move_walk(0.5f, false, false, 0.5f, lla::kWalkSpeed), 0.5f)) {
         return fail("standing still changed position");
     }

@@ -51,7 +51,7 @@ public:
             ready_to_enter_ = false;
         }
         if (ready_to_enter_) {
-            phase_->begin_tutorial();
+            phase_->begin_party();
             showing_ = false;
             return;
         }

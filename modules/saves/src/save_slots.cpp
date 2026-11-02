@@ -270,9 +270,24 @@ bool valid_slot(int slot) {
     return slot >= 1 && slot <= ISaveSlots::kSlotCount;
 }
 
-std::string game_document(int slot, int position_millis) {
-    return "{\n  \"slot\": " + std::to_string(slot) + ",\n  \"started\": true,\n  \"position\": " +
-           std::to_string(position_millis) + "\n}\n";
+std::string game_document(const SaveGame& game) {
+    return "{\n  \"slot\": " + std::to_string(game.slot) + ",\n  \"started\": true,\n  \"position\": " +
+           std::to_string(game.position_millis) + ",\n  \"rank1\": " + std::to_string(game.ranks[0]) + ",\n  \"rank2\": " +
+           std::to_string(game.ranks[1]) + ",\n  \"rank3\": " + std::to_string(game.ranks[2]) + ",\n  \"rank4\": " +
+           std::to_string(game.ranks[3]) + "\n}\n";
+}
+
+bool read_rank(const std::vector<Field>& fields, std::string_view key, int& rank) {
+    const JsonValue* value = find_last(fields, key);
+    if (value == nullptr) {
+        rank = 0;
+        return true;
+    }
+    if (value->type != JsonValue::Type::Int || value->integer < 0) {
+        return false;
+    }
+    rank = value->integer;
+    return true;
 }
 
 int clamp_position(int position_millis) {
@@ -316,14 +331,19 @@ bool JsonSaveSlots::occupied(int slot) const {
     return std::filesystem::is_regular_file(path_for(slot), error);
 }
 
-bool JsonSaveSlots::write_slot(int slot, int position_millis) {
-    const std::filesystem::path destination = path_for(slot);
+bool JsonSaveSlots::write_game(const SaveGame& game) {
+    if (!valid_slot(game.slot) || !game.started) {
+        return false;
+    }
+    SaveGame stored = game;
+    stored.position_millis = clamp_position(game.position_millis);
+    const std::filesystem::path destination = path_for(stored.slot);
     const std::filesystem::path temporary(destination.string() + ".tmp");
     try {
         if (!directory_.empty()) {
             std::filesystem::create_directories(directory_);
         }
-        if (!write_text(temporary, game_document(slot, clamp_position(position_millis)))) {
+        if (!write_text(temporary, game_document(stored))) {
             remove_file(temporary);
             return false;
         }
@@ -339,14 +359,51 @@ bool JsonSaveSlots::start_new_game(int slot) {
     if (!valid_slot(slot)) {
         return false;
     }
-    return write_slot(slot, 500);
+    SaveGame game;
+    game.slot = slot;
+    game.started = true;
+    game.position_millis = 500;
+    return write_game(game);
 }
 
 bool JsonSaveSlots::store_progress(int slot, int position_millis) {
-    if (!valid_slot(slot)) {
+    SaveGame game;
+    if (!read_game(slot, game) || !game.started) {
         return false;
     }
-    return write_slot(slot, position_millis);
+    game.position_millis = position_millis;
+    return write_game(game);
+}
+
+bool JsonSaveSlots::load_party(int slot, int* ranks) const {
+    if (ranks == nullptr) {
+        return false;
+    }
+    SaveGame game;
+    if (!read_game(slot, game) || !game.started) {
+        return false;
+    }
+    for (int index = 0; index < 4; ++index) {
+        ranks[index] = game.ranks[index];
+    }
+    return true;
+}
+
+bool JsonSaveSlots::store_party(int slot, const int* ranks) {
+    if (ranks == nullptr) {
+        return false;
+    }
+    SaveGame game;
+    if (!read_game(slot, game) || !game.started) {
+        return false;
+    }
+    for (int index = 0; index < 4; ++index) {
+        if (ranks[index] < 0) {
+            return false;
+        }
+        game.ranks[index] = ranks[index];
+    }
+    return write_game(game);
 }
 
 bool JsonSaveSlots::load_progress(int slot, int& position_millis) const {
@@ -386,9 +443,17 @@ bool JsonSaveSlots::read_game(int slot, SaveGame& game) const {
         }
         position_millis = clamp_position(position_value->integer);
     }
+    int ranks[4] = {};
+    if (!read_rank(fields, "rank1", ranks[0]) || !read_rank(fields, "rank2", ranks[1]) || !read_rank(fields, "rank3", ranks[2]) ||
+        !read_rank(fields, "rank4", ranks[3])) {
+        return false;
+    }
     game.slot = slot_value->integer;
     game.started = started_value->boolean;
     game.position_millis = position_millis;
+    for (int index = 0; index < 4; ++index) {
+        game.ranks[index] = ranks[index];
+    }
     return true;
 }
 

@@ -1,5 +1,6 @@
 #include "lla/frontend/register.hpp"
 
+#include "lla/party/party.hpp"
 #include "lla/ui/menu_layout.hpp"
 #include "lla/ui/text.hpp"
 #include "lla/ui/theme.hpp"
@@ -391,10 +392,24 @@ private:
             status_ = kReadFailed;
             return;
         }
+        int ranks[IPlayPhase::kPartySlots] = {};
+        if (!saves_->load_party(slot, ranks)) {
+            status_ = kReadFailed;
+            return;
+        }
+        if (phase_ == nullptr) {
+            return;
+        }
         screen_ = Screen::Main;
         index_ = 0;
         status_.clear();
-        phase_->continue_game(slot, static_cast<float>(millis) / 1000.f);
+        phase_->set_party_ranks(ranks);
+        const float position = static_cast<float>(millis) / 1000.f;
+        if (starting_party_ready(ranks)) {
+            phase_->continue_game(slot, position);
+            return;
+        }
+        phase_->open_party(slot, position);
     }
 
     int continue_count() const { return static_cast<int>(continue_slots_.size()) + 1; }

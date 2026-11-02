@@ -1,5 +1,6 @@
 #include "lla/tutorial/register.hpp"
 
+#include "lla/party/party.hpp"
 #include "lla/tutorial/walk.hpp"
 #include "lla/ui/menu_layout.hpp"
 #include "lla/ui/text.hpp"
@@ -140,7 +141,27 @@ Rect screen_line(float x, float y, float max_w, float max_bottom, int scale, std
     return {x, top, max_w, box_h};
 }
 
-void draw_room(ICanvas& canvas, float position, bool show_hint, const ui::Theme& theme) {
+void draw_members(ICanvas& canvas, const RoomLayout& room, float position, const int* ranks) {
+    const float front_x = character_x(room, position);
+    const float step = std::max(18.f, room.character_w * 0.85f);
+    MemberPlace members[kPartySlotCount];
+    const int count = place_members(ranks, front_x, step, members, kPartySlotCount);
+    if (count <= 0) {
+        canvas.fill_rect({front_x, room.feet - room.character_h, room.character_w, room.character_h}, kCharacter);
+        return;
+    }
+    for (int index = 0; index < count; ++index) {
+        float x = members[index].x;
+        if (x < 0.f) {
+            x = 0.f;
+        }
+        const ClassDef* def = find_class(members[index].class_id);
+        const Color color = def == nullptr ? kCharacter : def->color;
+        canvas.fill_rect({x, room.feet - room.character_h, room.character_w, room.character_h}, color);
+    }
+}
+
+void draw_room(ICanvas& canvas, float position, const int* ranks, bool show_hint, const ui::Theme& theme) {
     const float width = static_cast<float>(canvas.width());
     const float height = static_cast<float>(canvas.height());
     const RoomLayout room = room_layout(canvas.width(), canvas.height());
@@ -172,8 +193,7 @@ void draw_room(ICanvas& canvas, float position, bool show_hint, const ui::Theme&
     canvas.fill_rect({width - room.side - width * 0.16f - pilaster_w, height * 0.14f, pilaster_w, room.horizon - height * 0.14f}, kPilaster);
     canvas.fill_rect({room.walk_left, room.feet, room.walk_right + room.character_w - room.walk_left, 3.f}, kGroundLine);
 
-    const float actor_x = character_x(room, position);
-    canvas.fill_rect({actor_x, room.feet - room.character_h, room.character_w, room.character_h}, kCharacter);
+    draw_members(canvas, room, position, ranks);
     const float margin = 16.f;
     const Rect room_label = screen_line(
         room.side + 16.f, 24.f, std::max(1.f, width - room.side - 32.f), height - margin, theme.text_scale, kRoomLabel, margin);
@@ -207,6 +227,10 @@ public:
             position_ = phase_->resume_position();
             paused_ = false;
             pause_index_ = 0;
+            const int* stored = phase_->party_ranks();
+            for (int slot = 0; slot < kPartySlotCount; ++slot) {
+                ranks_[slot] = stored == nullptr ? 0 : stored[slot];
+            }
             phase_->note_position(position_);
         }
         if (input.window_width <= 0 || input.window_height <= 0) {
@@ -254,7 +278,7 @@ public:
         }
         const ui::Theme colors = theme();
         const bool show_pause = paused_ || settings_open();
-        draw_room(canvas, position_, !show_pause, colors);
+        draw_room(canvas, position_, ranks_, !show_pause, colors);
         if (!paused_) {
             return;
         }
@@ -310,6 +334,7 @@ private:
     bool paused_ = false;
     int pause_index_ = 0;
     float position_ = 0.5f;
+    int ranks_[kPartySlotCount] = {};
 };
 
 }  // namespace
