@@ -1,3 +1,4 @@
+#include "lla/dungeon_ui/hud.hpp"
 #include "lla/frontend/register.hpp"
 #include "lla/intro/register.hpp"
 #include "lla/party/register.hpp"
@@ -15,6 +16,7 @@ int main() {
               << "Up and Down select a row. Enter confirms. Click a row.\n"
               << "New Game asks for one of five save slots, then plays the intro.\n"
               << "After the intro, pick 2 of 5 colors and place them, then the tutorial starts.\n"
+              << "The tutorial room shows the party board and a room chart along the bottom.\n"
               << "Continue resumes a saved party in the tutorial room.\n"
               << "A save without a party opens party selection.\n"
               << "Options changes display, audio, controls, and access.\n"
@@ -27,11 +29,12 @@ int main() {
         lla::JsonDeviceSettings devices{"settings/device.json"};
         lla::PlayPhaseState phase;
         lla::ISettingsScreen* settings_screen = nullptr;
+        lla::DungeonHud dungeon_hud{&lla::kTutorialMap};
         lla::ModuleRegistry registry;
         lla::register_frontend(registry, &saves, &phase, &settings_screen, &devices);
         lla::register_intro(registry, &phase, &devices);
         lla::register_party(registry, &saves, &phase, &settings_screen, &devices);
-        lla::register_tutorial(registry, &phase, &saves, &settings_screen, &devices);
+        lla::register_tutorial(registry, &phase, &saves, &settings_screen, &devices, &dungeon_hud);
         lla::register_settings(registry, &devices, &phase, settings_screen);
         return lla::run_vulkan_host(registry, &devices);
     } catch (const std::exception& error) {

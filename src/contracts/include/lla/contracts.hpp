@@ -115,6 +115,16 @@ public:
     virtual void close() = 0;
 };
 
+// Expedition HUD drawn over a dungeon room. A null pointer leaves the room as it was.
+class IDungeonHud {
+public:
+    virtual ~IDungeonHud() = default;
+    virtual float top_band(int width, int height, int text_scale) const = 0;
+    virtual float bottom_band(int width, int height, int text_scale) const = 0;
+    virtual void draw(
+        ICanvas& canvas, std::string_view room_name, const int* ranks, float position, int text_scale, bool high_contrast) = 0;
+};
+
 enum class AppCommand : std::uint8_t {
     None,
     StartNewGame,

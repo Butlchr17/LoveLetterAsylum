@@ -9,6 +9,7 @@ void register_tutorial(
     IPlayPhase* phase,
     ISaveSlots* saves = nullptr,
     ISettingsScreen** settings = nullptr,
-    IDeviceSettings* devices = nullptr);
+    IDeviceSettings* devices = nullptr,
+    IDungeonHud* hud = nullptr);
 
 }  // namespace lla
