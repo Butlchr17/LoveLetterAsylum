@@ -3,7 +3,8 @@
 namespace lla {
 
 // Normalized position across one room. 0 is the left edge and 1 is the right edge.
-inline constexpr float kWalkSpeed = 0.5f;
+// 0.375 is 75 percent of the previous 0.5 room speed.
+inline constexpr float kWalkSpeed = 0.375f;
 
 inline float move_walk(float position, bool left, bool right, float dt, float speed) {
     if (position < 0.f) {

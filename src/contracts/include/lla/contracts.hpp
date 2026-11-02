@@ -153,22 +153,32 @@ public:
     // position_millis is 0 at the left edge and 1000 at the right edge.
     virtual bool load_progress(int slot, int& position_millis) const = 0;
     virtual bool store_progress(int slot, int position_millis) = 0;
+    // ranks has four ints. 0 is an empty party slot. Missing save fields are empty.
+    virtual bool load_party(int slot, int* ranks) const = 0;
+    virtual bool store_party(int slot, const int* ranks) = 0;
 };
 
 // Which full-screen mode is showing. Modules draw only their own phase.
 enum class PlayPhase : std::uint8_t {
     Frontend,
     Intro,
+    Party,
     Tutorial,
 };
 
 class IPlayPhase {
 public:
+    static constexpr int kPartySlots = 4;
+
     virtual ~IPlayPhase() = default;
     virtual PlayPhase phase() const = 0;
     virtual int active_slot() const = 0;
     virtual float resume_position() const = 0;
+    virtual const int* party_ranks() const = 0;
+    virtual void set_party_ranks(const int* ranks) = 0;
     virtual void begin_intro(int slot) = 0;
+    virtual void begin_party() = 0;
+    virtual void open_party(int slot, float position) = 0;
     virtual void begin_tutorial() = 0;
     virtual void continue_game(int slot, float position) = 0;
     virtual void return_to_menu() = 0;
@@ -180,10 +190,25 @@ public:
     PlayPhase phase() const override { return phase_; }
     int active_slot() const override { return slot_; }
     float resume_position() const override { return position_; }
+    const int* party_ranks() const override { return ranks_; }
+    void set_party_ranks(const int* ranks) override {
+        for (int slot = 0; slot < kPartySlots; ++slot) {
+            ranks_[slot] = ranks == nullptr ? 0 : ranks[slot];
+        }
+    }
     void begin_intro(int slot) override {
         slot_ = slot;
         position_ = 0.5f;
+        for (int& rank : ranks_) {
+            rank = 0;
+        }
         phase_ = PlayPhase::Intro;
+    }
+    void begin_party() override { phase_ = PlayPhase::Party; }
+    void open_party(int slot, float position) override {
+        slot_ = slot;
+        position_ = position < 0.f ? 0.f : (position > 1.f ? 1.f : position);
+        phase_ = PlayPhase::Party;
     }
     void begin_tutorial() override { phase_ = PlayPhase::Tutorial; }
     void continue_game(int slot, float position) override {
@@ -200,6 +225,7 @@ private:
     PlayPhase phase_ = PlayPhase::Frontend;
     int slot_ = 0;
     float position_ = 0.5f;
+    int ranks_[kPartySlots] = {};
 };
 
 class IModule {

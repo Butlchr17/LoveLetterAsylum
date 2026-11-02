@@ -34,6 +34,12 @@ add_library(lla_ui STATIC
 target_include_directories(lla_ui PUBLIC modules/ui/include)
 target_link_libraries(lla_ui PUBLIC lla_contracts)
 
+add_library(lla_party STATIC
+    modules/party/src/party_select.cpp)
+target_include_directories(lla_party PUBLIC modules/party/include)
+target_link_libraries(lla_party PUBLIC lla_ui)
+target_compile_options(lla_party PRIVATE -Wall -Wextra)
+
 add_library(lla_saves STATIC
     modules/saves/src/save_slots.cpp)
 target_include_directories(lla_saves PUBLIC modules/saves/include)
@@ -43,7 +49,7 @@ target_compile_options(lla_saves PRIVATE -Wall -Wextra)
 add_library(lla_frontend STATIC
     modules/frontend/src/main_menu.cpp)
 target_include_directories(lla_frontend PUBLIC modules/frontend/include)
-target_link_libraries(lla_frontend PUBLIC lla_ui)
+target_link_libraries(lla_frontend PUBLIC lla_ui lla_party)
 
 add_library(lla_intro STATIC
     modules/intro/src/intro.cpp)
@@ -54,7 +60,7 @@ target_compile_options(lla_intro PRIVATE -Wall -Wextra)
 add_library(lla_tutorial STATIC
     modules/tutorial/src/tutorial.cpp)
 target_include_directories(lla_tutorial PUBLIC modules/tutorial/include)
-target_link_libraries(lla_tutorial PUBLIC lla_ui)
+target_link_libraries(lla_tutorial PUBLIC lla_ui lla_party)
 target_compile_options(lla_tutorial PRIVATE -Wall -Wextra)
 
 add_library(lla_settings STATIC
@@ -91,8 +97,12 @@ add_executable(text_fit_test tests/text_fit_test.cpp)
 target_link_libraries(text_fit_test PRIVATE lla_ui)
 target_compile_options(text_fit_test PRIVATE -Wall -Wextra)
 
+add_executable(party_test tests/party_test.cpp)
+target_link_libraries(party_test PRIVATE lla_party)
+target_compile_options(party_test PRIVATE -Wall -Wextra)
+
 add_executable(loveletter src/host/main.cpp)
-target_link_libraries(loveletter PRIVATE lla_frontend lla_intro lla_tutorial lla_saves lla_settings lla_vulkan)
+target_link_libraries(loveletter PRIVATE lla_frontend lla_intro lla_party lla_tutorial lla_saves lla_settings lla_vulkan)
 target_compile_options(loveletter PRIVATE -Wall -Wextra)
 target_compile_options(lla_ui PRIVATE -Wall -Wextra)
 target_compile_options(lla_frontend PRIVATE -Wall -Wextra)
