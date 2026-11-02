@@ -1,0 +1,269 @@
+# Love Letter Asylum
+# Ignore local, generated, and secret files. This does not remove anything
+# that was already committed. Check `git status` before the first commit.
+
+# ---------------------------------------------------------------------------
+# Secrets and machine-local config
+# ---------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.secret
+*.secrets
+credentials.json
+credentials.*.json
+secrets.json
+secrets.*.json
+auth.json
+token.json
+*.token
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+*.ppk
+.netrc
+.npmrc
+.pypirc
+.aws/
+.azure/
+.gcloud/
+service-account*.json
+*-service-account.json
+terraform.tfstate
+terraform.tfstate.*
+.terraform/
+*.local
+*.local.*
+
+# ---------------------------------------------------------------------------
+# Steam
+# steam_appid.txt is a local dev hint and must not ship in the depot.
+# encryptedappticket.key is a partner secret (also matched by *.key).
+# The Steamworks SDK is downloaded per machine from the partner site.
+# If the project later needs a public header tree, name it include/,
+# because a top-level sdk/ is reserved for the Valve SDK drop.
+# Depot scripts such as app_build_<id>.vdf are source and stay tracked.
+# ---------------------------------------------------------------------------
+steam_appid.txt
+encryptedappticket.key
+steamworks_sdk*/
+**/steamworks_sdk*/
+steamworks_sdk*.zip
+steamworks_sdk*.tar.gz
+steamworks_sdk*.tar.xz
+/sdk/
+/steamcmd/
+/tools/steamcmd/
+/output/
+/depots_build/
+**/ssfn*
+loginusers.vdf
+**/steam/config/config.vdf
+libraryfolders.vdf
+
+# Steam API redistributables are copied into the depot at package time.
+steam_api.dll
+steam_api64.dll
+libsteam_api.so
+libsteam_api.dylib
+libsteam_api64.so
+
+# ---------------------------------------------------------------------------
+# C / C++ build products
+# Wavefront models under asset trees are re-included below. MSVC also uses
+# .obj, so build folders and loose object files stay ignored.
+# A vendored library you intend to commit needs its own negation AFTER this
+# section, for example:
+#   !third_party/some_lib/lib/libfoo.a
+# ---------------------------------------------------------------------------
+*.d
+*.o
+*.lo
+*.slo
+*.obj
+!assets/**/*.obj
+!art/**/*.obj
+!content/**/*.obj
+*.gch
+*.pch
+*.ilk
+*.exp
+*.idb
+*.pdb
+*.iobj
+*.ipdb
+*.pgc
+*.pgd
+*.dwo
+*.so
+*.so.*
+*.dylib
+*.dll
+*.a
+*.la
+*.lai
+*.lib
+*.exe
+*.out
+*.app
+*.res
+*.exe.manifest
+*.AppImage
+
+# In-source and out-of-source build trees. A hand-written Makefile is source
+# and is not ignored. Generated fragments are ignored by the names below.
+/build/
+/build-*/
+/cmake-build-*/
+/out/
+/dist/
+/install/
+/_build/
+/bin/
+/lib/
+CMakeFiles/
+CMakeCache.txt
+CMakeScripts/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+CMakeLists.txt.user
+CMakeUserPresets.json
+_deps/
+Testing/
+*.ninja
+.ninja_deps
+.ninja_log
+build.ninja
+meson-info/
+meson-private/
+meson-logs/
+.cache/
+.ccache/
+.sccache/
+bazel-*
+
+# Package-manager output. Lockfiles (conan.lock, vcpkg.json) stay tracked.
+vcpkg_installed/
+conanbuildinfo.*
+conaninfo.txt
+conan_imports_manifest.txt
+graph_info.json
+
+# Coverage and sanitizer dumps
+*.gcno
+*.gcda
+*.gcov
+*.profraw
+*.profdata
+lcov.info
+coverage/
+htmlcov/
+# Root-only crash dumps. A bare "core" pattern would also hide src/core/.
+/core
+/core.[0-9]*
+/vgcore.[0-9]*
+*.dmp
+*.mdmp
+*.stackdump
+
+# ---------------------------------------------------------------------------
+# Game runtime files (player saves, logs, crashes)
+# Authored content under assets/, art/, and content/ stays tracked.
+# ---------------------------------------------------------------------------
+/saves/
+/settings/
+/SaveGames/
+/logs/
+/crashes/
+/crash_dumps/
+*.log
+*.sav
+*.save
+*.sqlite
+*.sqlite3
+*.db
+!assets/**/*.sqlite
+!assets/**/*.sqlite3
+!assets/**/*.db
+!content/**/*.sqlite
+!content/**/*.sqlite3
+!content/**/*.db
+
+# ---------------------------------------------------------------------------
+# Editors and OS clutter
+# Shared CMakePresets.json is not ignored. .idea and .vs hold local paths
+# and sometimes data-source passwords.
+# ---------------------------------------------------------------------------
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.VC.db
+*.VC.opendb
+*.sdf
+*.opensdf
+*.ncb
+*.aps
+ipch/
+.idea/
+*.iml
+.vscode/launch.json
+.vscode/*.local.json
+*.xcuserstate
+xcuserdata/
+DerivedData/
+*.mode1v3
+*.mode2v3
+*.pbxuser
+*.pro.user
+*.qtvscr
+*.autosave
+.clangd/
+compile_commands.json
+.gdb_history
+.gdb_history.*
+/tags
+/TAGS
+/GPATH
+/GRTAGS
+/GTAGS
+*.swp
+*.swo
+*~
+*.bak
+*.tmp
+*.orig
+*.rej
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.directory
+.Trash-*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+desktop.ini
+$RECYCLE.BIN/
+.fuse_hidden*
+.nfs*
+
+# Optional local tooling
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+node_modules/
