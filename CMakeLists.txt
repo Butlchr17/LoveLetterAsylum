@@ -40,6 +40,12 @@ target_include_directories(lla_party PUBLIC modules/party/include)
 target_link_libraries(lla_party PUBLIC lla_ui)
 target_compile_options(lla_party PRIVATE -Wall -Wextra)
 
+add_library(lla_dungeon_ui STATIC
+    modules/dungeon_ui/src/hud.cpp)
+target_include_directories(lla_dungeon_ui PUBLIC modules/dungeon_ui/include)
+target_link_libraries(lla_dungeon_ui PUBLIC lla_ui lla_party)
+target_compile_options(lla_dungeon_ui PRIVATE -Wall -Wextra)
+
 add_library(lla_saves STATIC
     modules/saves/src/save_slots.cpp)
 target_include_directories(lla_saves PUBLIC modules/saves/include)
@@ -101,8 +107,12 @@ add_executable(party_test tests/party_test.cpp)
 target_link_libraries(party_test PRIVATE lla_party)
 target_compile_options(party_test PRIVATE -Wall -Wextra)
 
+add_executable(dungeon_hud_test tests/dungeon_hud_test.cpp)
+target_link_libraries(dungeon_hud_test PRIVATE lla_dungeon_ui)
+target_compile_options(dungeon_hud_test PRIVATE -Wall -Wextra)
+
 add_executable(loveletter src/host/main.cpp)
-target_link_libraries(loveletter PRIVATE lla_frontend lla_intro lla_party lla_tutorial lla_saves lla_settings lla_vulkan)
+target_link_libraries(loveletter PRIVATE lla_frontend lla_intro lla_party lla_dungeon_ui lla_tutorial lla_saves lla_settings lla_vulkan)
 target_compile_options(loveletter PRIVATE -Wall -Wextra)
 target_compile_options(lla_ui PRIVATE -Wall -Wextra)
 target_compile_options(lla_frontend PRIVATE -Wall -Wextra)

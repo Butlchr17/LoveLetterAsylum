@@ -42,6 +42,9 @@ struct RoomLayout {
     float character_h = 0;
     float walk_left = 0;
     float walk_right = 0;
+    float scene_top = 0;
+    float back_top = 0;
+    float pilaster_top = 0;
 };
 
 
@@ -56,15 +59,36 @@ std::uint8_t shade(float value) {
     return static_cast<std::uint8_t>(value + 0.5f);
 }
 
-RoomLayout room_layout(int width, int height) {
+RoomLayout room_layout(int width, int height, float top_inset, float bottom_inset) {
     const float w = static_cast<float>(width);
     const float h = static_cast<float>(height);
     RoomLayout room;
     room.side = std::max(24.f, std::round(w * 0.08f));
-    room.horizon = std::round(h * 0.42f);
-    room.floor_bottom = std::round(h * 0.86f);
-    room.feet = std::round(h * 0.76f);
-    room.character_h = std::round(h * 0.24f);
+    const bool inset = top_inset > 0.5f || bottom_inset > 0.5f;
+    if (!inset) {
+        room.scene_top = 0.f;
+        room.back_top = h * 0.1f;
+        room.pilaster_top = h * 0.14f;
+        room.horizon = std::round(h * 0.42f);
+        room.floor_bottom = std::round(h * 0.86f);
+        room.feet = std::round(h * 0.76f);
+        room.character_h = std::round(h * 0.24f);
+    } else {
+        const float scene_top = std::min(std::max(0.f, top_inset), std::max(0.f, h - 1.f));
+        const float scene_bottom = std::max(scene_top + 1.f, h - std::max(0.f, bottom_inset));
+        const float scene_h = scene_bottom - scene_top;
+        room.scene_top = scene_top;
+        room.back_top = scene_top + scene_h * 0.1f;
+        room.pilaster_top = scene_top + scene_h * 0.14f;
+        room.horizon = std::round(scene_top + scene_h * 0.42f);
+        room.floor_bottom = std::round(scene_bottom);
+        room.feet = std::round(scene_bottom - std::max(10.f, scene_h * 0.06f));
+        room.character_h = std::round(scene_h * 0.30f);
+        const float headroom = room.feet - room.horizon - 8.f;
+        if (room.character_h > headroom) {
+            room.character_h = std::max(12.f, headroom);
+        }
+    }
     room.character_w = std::round(room.character_h * 0.36f);
     room.walk_left = room.side + 28.f;
     room.walk_right = w - room.side - room.character_w - 28.f;
@@ -161,13 +185,14 @@ void draw_members(ICanvas& canvas, const RoomLayout& room, float position, const
     }
 }
 
-void draw_room(ICanvas& canvas, float position, const int* ranks, bool show_hint, const ui::Theme& theme) {
+void draw_room(
+    ICanvas& canvas, float position, const int* ranks, float top_inset, float bottom_inset, bool show_label, bool show_hint, const ui::Theme& theme) {
     const float width = static_cast<float>(canvas.width());
     const float height = static_cast<float>(canvas.height());
-    const RoomLayout room = room_layout(canvas.width(), canvas.height());
+    const RoomLayout room = room_layout(canvas.width(), canvas.height(), top_inset, bottom_inset);
     canvas.clear(kCeiling);
     canvas.fill_rect({0.f, 0.f, width, room.horizon}, kCeiling);
-    canvas.fill_rect({room.side, height * 0.1f, width - room.side * 2.f, room.horizon - height * 0.1f}, kBackWall);
+    canvas.fill_rect({room.side, room.back_top, width - room.side * 2.f, std::max(1.f, room.horizon - room.back_top)}, kBackWall);
 
     constexpr int kBands = 8;
     const float floor_h = std::max(1.f, room.floor_bottom - room.horizon);
@@ -186,18 +211,21 @@ void draw_room(ICanvas& canvas, float position, const int* ranks, bool show_hint
         canvas.fill_rect({room.side + inset, y, std::max(1.f, width - (room.side + inset) * 2.f), band_h}, color);
     }
 
-    canvas.fill_rect({0.f, 0.f, room.side, room.floor_bottom}, kSideWall);
-    canvas.fill_rect({width - room.side, 0.f, room.side, room.floor_bottom}, kSideWall);
+    canvas.fill_rect({0.f, room.scene_top, room.side, std::max(1.f, room.floor_bottom - room.scene_top)}, kSideWall);
+    canvas.fill_rect({width - room.side, room.scene_top, room.side, std::max(1.f, room.floor_bottom - room.scene_top)}, kSideWall);
     const float pilaster_w = std::max(18.f, room.side * 0.45f);
-    canvas.fill_rect({room.side + width * 0.16f, height * 0.14f, pilaster_w, room.horizon - height * 0.14f}, kPilaster);
-    canvas.fill_rect({width - room.side - width * 0.16f - pilaster_w, height * 0.14f, pilaster_w, room.horizon - height * 0.14f}, kPilaster);
+    const float pilaster_h = std::max(1.f, room.horizon - room.pilaster_top);
+    canvas.fill_rect({room.side + width * 0.16f, room.pilaster_top, pilaster_w, pilaster_h}, kPilaster);
+    canvas.fill_rect({width - room.side - width * 0.16f - pilaster_w, room.pilaster_top, pilaster_w, pilaster_h}, kPilaster);
     canvas.fill_rect({room.walk_left, room.feet, room.walk_right + room.character_w - room.walk_left, 3.f}, kGroundLine);
 
     draw_members(canvas, room, position, ranks);
     const float margin = 16.f;
-    const Rect room_label = screen_line(
-        room.side + 16.f, 24.f, std::max(1.f, width - room.side - 32.f), height - margin, theme.text_scale, kRoomLabel, margin);
-    ui::draw_text_box(canvas, room_label, kRoomLabel, theme.hint, theme.text_scale, ui::TextAlign::Left, false);
+    if (show_label) {
+        const Rect room_label = screen_line(
+            room.side + 16.f, 24.f, std::max(1.f, width - room.side - 32.f), height - margin, theme.text_scale, kRoomLabel, margin);
+        ui::draw_text_box(canvas, room_label, kRoomLabel, theme.hint, theme.text_scale, ui::TextAlign::Left, false);
+    }
     if (show_hint) {
         const Rect hint = screen_line(margin, height - 36.f, std::max(1.f, width - margin * 2.f), height - 22.f, theme.text_scale, kMoveHint, margin);
         ui::draw_text_box(canvas, hint, kMoveHint, theme.hint, theme.text_scale, ui::TextAlign::Left, false);
@@ -206,8 +234,8 @@ void draw_room(ICanvas& canvas, float position, const int* ranks, bool show_hint
 
 class TutorialModule final : public IModule {
 public:
-    TutorialModule(IPlayPhase* phase, ISaveSlots* saves, ISettingsScreen** settings, IDeviceSettings* devices)
-        : phase_(phase), saves_(saves), settings_(settings), devices_(devices) {}
+    TutorialModule(IPlayPhase* phase, ISaveSlots* saves, ISettingsScreen** settings, IDeviceSettings* devices, IDungeonHud* hud)
+        : phase_(phase), saves_(saves), settings_(settings), devices_(devices), hud_(hud) {}
 
     std::string_view name() const override { return "tutorial.room"; }
 
@@ -278,7 +306,18 @@ public:
         }
         const ui::Theme colors = theme();
         const bool show_pause = paused_ || settings_open();
-        draw_room(canvas, position_, ranks_, !show_pause, colors);
+        float top_inset = 0.f;
+        float bottom_inset = 0.f;
+        if (hud_ != nullptr) {
+            top_inset = hud_->top_band(canvas.width(), canvas.height(), colors.text_scale);
+            bottom_inset = hud_->bottom_band(canvas.width(), canvas.height(), colors.text_scale);
+        }
+        const bool hud_on = hud_ != nullptr && top_inset > 0.f && bottom_inset > 0.f;
+        draw_room(canvas, position_, ranks_, top_inset, bottom_inset, !hud_on, !show_pause && !hud_on, colors);
+        if (hud_on) {
+            const bool contrast = devices_ != nullptr && devices_->get().high_contrast;
+            hud_->draw(canvas, kRoomLabel, ranks_, position_, colors.text_scale, contrast);
+        }
         if (!paused_) {
             return;
         }
@@ -330,6 +369,7 @@ private:
     ISaveSlots* saves_ = nullptr;
     ISettingsScreen** settings_ = nullptr;
     IDeviceSettings* devices_ = nullptr;
+    IDungeonHud* hud_ = nullptr;
     bool active_ = false;
     bool paused_ = false;
     int pause_index_ = 0;
@@ -340,8 +380,8 @@ private:
 }  // namespace
 
 void register_tutorial(
-    ModuleRegistry& registry, IPlayPhase* phase, ISaveSlots* saves, ISettingsScreen** settings, IDeviceSettings* devices) {
-    registry.add<TutorialModule>(phase, saves, settings, devices);
+    ModuleRegistry& registry, IPlayPhase* phase, ISaveSlots* saves, ISettingsScreen** settings, IDeviceSettings* devices, IDungeonHud* hud) {
+    registry.add<TutorialModule>(phase, saves, settings, devices, hud);
 }
 
 }  // namespace lla
